@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document:expense-tracker project</title>
+</head>
+
+<body>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.1.2/axios.min.js"></script>
+
+
+    <form onsubmit="saveToServer(event)">
+        <h1>Expense Tracker:</h1>
+        <label>Choose Expense Amount:</label>
+        <input id='expense' type="number" name="expenseAmount" required />
+        <label>Description:</label>
+        <input id='description' type="text" name="description" required />
+        <label for="option">Choose Category:</label>
+        <select name="category" id="option">
+            <option value="Fuel">Fuel</option>
+            <option value="Food">Food</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Movies">Movies</option>
+            <option value="Garments">Garments</option>
+        </select>
+        <button>Add Expense</button>
+    </form>
+
+    <ul id="ListOfExpenses"></ul>
+
+
+
+    <script>
+        function saveToServer(event) {
+            event.preventDefault();
+
+            const expenseAmount = event.target.expenseAmount.value;
+            const description = event.target.description.value;
+            const category = event.target.category.value;
+
+            //addind-feature_01:
+
+            const obj = {
+                expenseAmount, description, category
+            }
+
+
+
+//**********************dont allow duplicate(categories)******
+            axios.get('https://crudcrud.com/api/e6214c0ccbab49b6adb1378596f8a7e9/Expense-Data')
+            .then((res) => {
+                let arr=[];
+                for (let i = 0; i < res.data.length; i++) {
+
+                    arr.push(res.data[i].category)
+
+                  
+                }
+
+                if(!arr.includes(obj.category)){
+                    axios.post('https://crudcrud.com/api/e6214c0ccbab49b6adb1378596f8a7e9/Expense-Data',obj)
+                    .then((res)=>{
+                        showExpenseDetailsOnScreen(res.data);
+
+                    })
+                    .catch((err)=>{
+                        document.body.innerHTML += `<h3>1st PUT REQ:something went wrong::ref${err}</h3>`
+
+                    })
+
+                }
+                else{
+                    document.body.innerHTML +="<h5>can't add the same category,category already exists!</h5>"
+
+                }
+            })
+            .catch((err)=>{
+                document.body.innerHTML += `<h3>1st get req:something went wrong::ref${err}</h3>`
+
+            })
+
+
+
+            // **********NORMAL METHOD*************allow duplicates
+            // axios.post('https://crudcrud.com/api/a8ce3178f6504fd982881294390a6dea/AppointmentData',obj)
+            // .then((res)=>{
+            //     showExpenseDetailsOnScreen(res.data);
+            // })
+
+
+
+
+
+
+            
+
+
+        }
+
+        //on refreshing:
+        window.addEventListener('DOMContentLoaded', () => {
+
+            axios.get("https://crudcrud.com/api/e6214c0ccbab49b6adb1378596f8a7e9/Expense-Data")
+                .then((res) => {
+                    for (let i = 0; i < res.data.length; i++) {
+                        showExpenseDetailsOnScreen(res.data[i]);
+                    }
+                })
+                .catch((err) => {
+                    document.body.innerHTML += "<h3>onrefresh:something went wrong!</h3>"
+                })
+
+        })
+
+        function showExpenseDetailsOnScreen(expense) {
+            //works
+            document.getElementById("expense").value = "";
+            document.getElementById("description").value = "";
+            document.getElementById("option").value = "";
+
+
+
+            const parent_node = document.getElementById("ListOfExpenses");
+            const child_node = `<li id=${expense._id}>${expense.expenseAmount}$--${expense.description}--${expense.category}<button onclick=delete_expTracker('${expense._id}')>Delete Expense Tracker</button><button onclick=editExpTracker('${expense._id}','${expense.expenseAmount}','${expense.description}','${expense.category}')>Edit Expense Tracker</button></li>`
+            parent_node.innerHTML = parent_node.innerHTML + child_node;
+
+        }
+
+        function delete_expTracker(userId) {
+
+            axios.delete(`https://crudcrud.com/api/e6214c0ccbab49b6adb1378596f8a7e9/Expense-Data/${userId}`)
+                .then((res) => {
+                    removeExpTrackerFromScreen(userId);
+                })
+                .catch((err) => {
+                    document.body.innerHTML += "<h3>ondelete:something went wrong!</h3>"
+
+                })
+        }
+
+        function removeExpTrackerFromScreen(userId) {
+            const parent = document.getElementById("ListOfExpenses");
+            const child = document.getElementById(userId);
+            if (child) {
+                parent.removeChild(child);
+
+            }
+
+        }
+
+        function editExpTracker(userId, amount, description, category) {
+            document.getElementById("expense").value = amount;
+            document.getElementById("description").value = description;
+            document.getElementById("option").value = category;
+            delete_expTracker(userId);
+
+        }
+
+
+    </script>
+
+
+
+
+
+
+</body>
+
+</html>
